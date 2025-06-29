@@ -45,7 +45,12 @@ export class UsersController {
   }
 
   @Get(':id/salary')
-  async getUsersSalary(@Param('id') id: string) {
+  getUsersSalary(@Param('id') id: string) {
     return this.usersService.getUsersSalary(+id);
+  }
+
+  @Get('all/users/salary')
+  getAllUsersSalary() {
+    return this.usersService.getAllUsersSalary();
   }
 }

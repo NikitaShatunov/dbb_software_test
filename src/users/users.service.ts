@@ -103,7 +103,19 @@ export class UsersService {
   async getUsersSalary(id: number) {
     const user = await this.findOne(id);
     //function - realization of salary calculation
-    return await this.calculateSalary(user, new Date());
+    const salary = await this.calculateSalary(user, new Date());
+    return salary;
+  }
+
+  async getAllUsersSalary() {
+    const users = await this.userRepository.find({
+      relations: { subordinates: true },
+    });
+    let total = 0;
+    for (const user of users) {
+      total += await this.calculateSalary(user, new Date());
+    }
+    return total;
   }
 
   async calculateSalary(user: User, date: Date) {
