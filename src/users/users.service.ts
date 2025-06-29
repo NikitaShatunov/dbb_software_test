@@ -104,7 +104,7 @@ export class UsersService {
     const user = await this.findOne(id);
     //function - realization of salary calculation
     const salary = await this.calculateSalary(user, date);
-    return salary;
+    return salary.toFixed(2);
   }
 
   async getAllUsersSalary(date: Date) {
@@ -115,7 +115,7 @@ export class UsersService {
     for (const user of users) {
       total += await this.calculateSalary(user, date);
     }
-    return total;
+    return total.toFixed(2);
   }
 
   async calculateSalary(user: User, date: Date) {
@@ -153,7 +153,6 @@ export class UsersService {
   }
   calculateYearsOfWork(user: User, date: Date) {
     const years = date.getFullYear() - user.date_of_join.getFullYear();
-    console.log(years);
     return years;
   }
 

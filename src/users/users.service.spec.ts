@@ -63,7 +63,7 @@ describe('UsersService', () => {
       mockUsers[0],
       new Date('2024-01-01'),
     );
-    console.log(salary);
+
     // 6 years * 3% = 18% => 600 + 108 = 708
     expect(salary).toBeCloseTo(708);
   });
