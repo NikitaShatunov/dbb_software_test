@@ -46,11 +46,11 @@ export class UsersController {
 
   @Get(':id/salary')
   getUsersSalary(@Param('id') id: string) {
-    return this.usersService.getUsersSalary(+id);
+    return this.usersService.getUsersSalary(+id, new Date());
   }
 
   @Get('all/users/salary')
   getAllUsersSalary() {
-    return this.usersService.getAllUsersSalary();
+    return this.usersService.getAllUsersSalary(new Date());
   }
 }

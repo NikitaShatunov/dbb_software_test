@@ -100,20 +100,20 @@ export class UsersService {
     return { deleted: true };
   }
 
-  async getUsersSalary(id: number) {
+  async getUsersSalary(id: number, date: Date) {
     const user = await this.findOne(id);
     //function - realization of salary calculation
-    const salary = await this.calculateSalary(user, new Date());
+    const salary = await this.calculateSalary(user, date);
     return salary;
   }
 
-  async getAllUsersSalary() {
+  async getAllUsersSalary(date: Date) {
     const users = await this.userRepository.find({
       relations: { subordinates: true },
     });
     let total = 0;
     for (const user of users) {
-      total += await this.calculateSalary(user, new Date());
+      total += await this.calculateSalary(user, date);
     }
     return total;
   }
@@ -153,6 +153,7 @@ export class UsersService {
   }
   calculateYearsOfWork(user: User, date: Date) {
     const years = date.getFullYear() - user.date_of_join.getFullYear();
+    console.log(years);
     return years;
   }
 
