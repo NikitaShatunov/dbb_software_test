@@ -47,7 +47,10 @@ export class UsersService {
   async findOne(id: number) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: { subordinates: true, supervisor: true },
+      relations: {
+        subordinates: true,
+        supervisor: true,
+      },
     });
     validateGetById(id, user, 'user');
     return user;
@@ -57,6 +60,7 @@ export class UsersService {
     const user = await this.findOne(id);
     const { subordinates_ids, role, ...restDto } = updateUserDto;
     const subordinates: User[] = [];
+    // check if Employee is trying to set subordinates
     if (role === Roles.Employee && subordinates_ids?.length) {
       throw new HttpException(
         'Cannot set subordinates for Employee',
@@ -65,6 +69,7 @@ export class UsersService {
     }
     if (subordinates_ids?.length)
       for (const subordinate_id of subordinates_ids) {
+        // check if subordinates is trying to add themselves
         if (subordinate_id === id) {
           throw new HttpException(
             'Cannot add yourself as a subordinate',
@@ -72,6 +77,13 @@ export class UsersService {
           );
         }
         const subordinate = await this.findOne(subordinate_id);
+        // check if subordinates is trying to add their supervisor
+        if (user.supervisor?.id === subordinate.id) {
+          throw new HttpException(
+            'Cannot add your supervisor as a subordinate',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
         subordinates.push(subordinate);
       }
     user.role = role;
@@ -86,5 +98,80 @@ export class UsersService {
     await this.findOne(id);
     await this.userRepository.delete(id);
     return { deleted: true };
+  }
+
+  async getUsersSalary(id: number) {
+    const user = await this.findOne(id);
+    //function - realization of salary calculation
+    return await this.calculateSalary(user, new Date());
+  }
+
+  async calculateSalary(user: User, date: Date) {
+    let salary = 0;
+    const years = this.calculateYearsOfWork(user, date);
+    switch (user.role) {
+      case Roles.Employee:
+        salary =
+          user.base_salary + Math.min(years * 0.03, 0.3) * user.base_salary;
+        break;
+      case Roles.Manager:
+        // check if user has subordinates and calculate their salary
+        const first_layer_salary = user.subordinates?.length
+          ? await this.calculateGroupSalary(user.subordinates, date)
+          : 0;
+        salary =
+          user.base_salary +
+          Math.min(years * 0.05, 0.4) * user.base_salary +
+          0.005 * first_layer_salary;
+        break;
+      case Roles.Sales:
+        // check if user has subordinates and calculate their salary
+        const all_layers_salary = await this.calculateAllLayersSalary(
+          user.id,
+          date,
+        );
+        salary =
+          user.base_salary +
+          Math.min(years * 0.01, 0.35) * user.base_salary +
+          0.003 * all_layers_salary;
+        break;
+    }
+
+    return salary;
+  }
+  calculateYearsOfWork(user: User, date: Date) {
+    const years = date.getFullYear() - user.date_of_join.getFullYear();
+    return years;
+  }
+
+  private async calculateGroupSalary(
+    users: User[],
+    date: Date,
+  ): Promise<number> {
+    const salaries = await Promise.all(
+      // calculate salary for each user of first layer
+      users.map((u) => this.calculateSalary(u, date)),
+    );
+    return salaries.reduce((sum, s) => sum + s, 0);
+  }
+
+  private async calculateAllLayersSalary(
+    user_id: number,
+    date: Date,
+  ): Promise<number> {
+    let total = 0;
+
+    const subordinates = await this.userRepository.find({
+      where: { supervisor: { id: user_id } },
+    });
+
+    for (const sub of subordinates) {
+      // calculate salary for each user of all layers
+      const subSalary = await this.calculateSalary(sub, date);
+      total += subSalary;
+      total += await this.calculateAllLayersSalary(sub.id, date);
+    }
+
+    return total;
   }
 }
