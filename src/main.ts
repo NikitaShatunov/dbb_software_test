@@ -2,14 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { UsersModule } from './users/users.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('part of confil')
-    .setDescription('API for of confil')
-    .setVersion('1.3')
+    .setTitle('Users salary api')
+    .setDescription('Test task for DBB junior backend developer')
+    .setVersion('1.1')
     .addBearerAuth(
       {
         type: 'http',
@@ -23,7 +24,7 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config, {
-    include: [],
+    include: [UsersModule],
   });
   SwaggerModule.setup('api', app, document);
   app.useGlobalPipes(new ValidationPipe());
